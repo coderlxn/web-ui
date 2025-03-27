@@ -1,40 +1,39 @@
-import pdb
 import logging
+import pdb
 
 from dotenv import load_dotenv
 
 load_dotenv()
-import os
-import glob
-import asyncio
 import argparse
+import asyncio
+import glob
 import os
 
 logger = logging.getLogger(__name__)
 
 import gradio as gr
-
 from browser_use.agent.service import Agent
-from playwright.async_api import async_playwright
 from browser_use.browser.browser import Browser, BrowserConfig
-from browser_use.browser.context import (
-    BrowserContextConfig,
-    BrowserContextWindowSize,
-)
+from browser_use.browser.context import BrowserContextConfig, BrowserContextWindowSize
+from gradio.themes import Base, Citrus, Default, Glass, Monochrome, Ocean, Origin, Soft
 from langchain_ollama import ChatOllama
 from playwright.async_api import async_playwright
-from src.utils.agent_state import AgentState
 
-from src.utils import utils
 from src.agent.custom_agent import CustomAgent
+from src.agent.custom_prompts import CustomAgentMessagePrompt, CustomSystemPrompt
 from src.browser.custom_browser import CustomBrowser
-from src.agent.custom_prompts import CustomSystemPrompt, CustomAgentMessagePrompt
 from src.browser.custom_context import BrowserContextConfig, CustomBrowserContext
 from src.controller.custom_controller import CustomController
-from gradio.themes import Citrus, Default, Glass, Monochrome, Ocean, Origin, Soft, Base
-from src.utils.default_config_settings import default_config, load_config_from_file, save_config_to_file, \
-    save_current_config, update_ui_from_config
-from src.utils.utils import update_model_dropdown, get_latest_files, capture_screenshot
+from src.utils import utils
+from src.utils.agent_state import AgentState
+from src.utils.default_config_settings import (
+    default_config,
+    load_config_from_file,
+    save_config_to_file,
+    save_current_config,
+    update_ui_from_config,
+)
+from src.utils.utils import capture_screenshot, get_latest_files, update_model_dropdown
 
 # Global variables for persistence
 _global_browser = None
@@ -943,6 +942,11 @@ def create_ui(config, theme_name="Ocean"):
                     stop_button = gr.Button("⏹️ Stop", variant="stop", scale=1)
 
                 with gr.Row():
+                    take_control_button = gr.Button("🖐️ 接管浏览器", variant="secondary", scale=1)
+                    finish_control_button = gr.Button("✅ 完成操作", variant="secondary", scale=1)
+                    user_control_status = gr.Markdown("当前状态：Agent自动操作中")
+
+                with gr.Row():
                     browser_view = gr.HTML(
                         value="<h1 style='width:80vw; height:50vh'>Waiting for browser session...</h1>",
                         label="Live Browser View",
@@ -1031,6 +1035,58 @@ def create_ui(config, theme_name="Ocean"):
                 inputs=[],
                 outputs=[stop_research_button, research_button],
             )
+
+            # 用户接管浏览器
+            def take_browser_control():
+                global _global_agent_state
+                
+                # 设置状态
+                _global_agent_state.set_user_control_active(True)
+                
+                # 使用全局agent_state设置下一个建议操作
+                # _global_agent_state.suggest_next_action("take_over_browser")
+                # logger.info("已向Agent建议执行'take_over_browser'操作")
+                
+                return (
+                    gr.update(interactive=False),  # take_control_button
+                    gr.update(interactive=True),  # finish_control_button
+                    "当前状态：请求用户接管中 - 等待Agent响应"  # user_control_status
+                )
+            
+            # 用户完成操作
+            def finish_browser_control():
+                logger.info("用户完成操作")
+                global _global_agent_state
+
+                # 重置用户接管状态
+                _global_agent_state.set_user_control_active(False)
+                
+                return (
+                    gr.update(interactive=True),  # take_control_button
+                    gr.update(interactive=False),  # finish_control_button
+                    "当前状态：已将控制权交还给Agent"  # user_control_status
+                )
+            
+            # 绑定用户交互按钮事件
+            take_control_button.click(
+                fn=take_browser_control,
+                inputs=[],
+                outputs=[take_control_button, finish_control_button, user_control_status]
+            )
+            
+            finish_control_button.click(
+                fn=finish_browser_control,
+                inputs=[],
+                outputs=[take_control_button, finish_control_button, user_control_status]
+            )
+            
+            # 初始状态设置 - 不可点击完成操作按钮
+            # 注意：不能直接使用Button.update，需要在UI加载后处理
+            def init_ui_state():
+                return gr.update(interactive=False)
+            
+            # 在UI加载时设置初始状态
+            demo.load(fn=lambda: init_ui_state(), outputs=finish_control_button)
 
             with gr.TabItem("🎥 Recordings", id=7, visible=True):
                 def list_recordings(save_recording_path):

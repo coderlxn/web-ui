@@ -1,6 +1,7 @@
 import os
 import pickle
 import uuid
+
 import gradio as gr
 
 
@@ -28,7 +29,7 @@ def default_config():
         "save_recording_path": "./tmp/record_videos",
         "save_trace_path": "./tmp/traces",
         "save_agent_history_path": "./tmp/agent_history",
-        "task": "go to google.com and type 'OpenAI' click search and give me the first url",
+        "task": "go to baidu.com and type 'OpenAI' click search and give me the first url",
     }
 
 

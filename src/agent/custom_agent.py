@@ -1,19 +1,33 @@
-import json
-import logging
-import pdb
-import traceback
-from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, Type, TypeVar
-from PIL import Image, ImageDraw, ImageFont
-import os
+import asyncio
 import base64
 import io
-import asyncio
-import time
+import json
+import logging
+import os
+import pdb
 import platform
-from browser_use.agent.prompts import SystemPrompt, AgentMessagePrompt
+import time
+import traceback
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+)
+
+from browser_use.agent.gif import create_history_gif
+from browser_use.agent.message_manager.utils import (
+    convert_input_messages,
+    extract_json_from_model_output,
+    save_conversation,
+)
+from browser_use.agent.prompts import AgentMessagePrompt, PlannerPrompt, SystemPrompt
 from browser_use.agent.service import Agent
-from browser_use.agent.message_manager.utils import convert_input_messages, extract_json_from_model_output, \
-    save_conversation
 from browser_use.agent.views import (
     ActionResult,
     AgentError,
@@ -26,10 +40,9 @@ from browser_use.agent.views import (
     StepMetadata,
     ToolCallingMethod,
 )
-from browser_use.agent.gif import create_history_gif
 from browser_use.browser.browser import Browser
 from browser_use.browser.context import BrowserContext
-from browser_use.browser.views import BrowserStateHistory
+from browser_use.browser.views import BrowserState, BrowserStateHistory
 from browser_use.controller.service import Controller
 from browser_use.telemetry.views import (
     AgentEndTelemetryEvent,
@@ -37,20 +50,15 @@ from browser_use.telemetry.views import (
     AgentStepTelemetryEvent,
 )
 from browser_use.utils import time_execution_async
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    BaseMessage,
-    HumanMessage,
-    AIMessage
-)
-from browser_use.browser.views import BrowserState, BrowserStateHistory
-from browser_use.agent.prompts import PlannerPrompt
-
 from json_repair import repair_json
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from PIL import Image, ImageDraw, ImageFont
+
 from src.utils.agent_state import AgentState
 
 from .custom_message_manager import CustomMessageManager, CustomMessageManagerSettings
-from .custom_views import CustomAgentOutput, CustomAgentStepInfo, CustomAgentState
+from .custom_views import CustomAgentOutput, CustomAgentState, CustomAgentStepInfo
 
 logger = logging.getLogger(__name__)
 
@@ -295,7 +303,48 @@ class CustomAgent(Agent):
 
     @time_execution_async("--step")
     async def step(self, step_info: Optional[CustomAgentStepInfo] = None) -> None:
-        """Execute one step of the task"""
+        """Execute one step of the agent's reasoning process and actions."""
+        global _global_agent_state
+        
+        # 检查是否处于用户接管状态
+        if self.state.is_user_control_active():
+            logger.info("当前处于用户接管状态,暂停AI操作")
+            # 等待用户完成操作
+            while self.state.is_user_control_active():
+                await asyncio.sleep(0.5)  # 每0.5秒检查一次状态
+            logger.info("用户操作已完成,继续AI操作")
+            return
+
+        # 检查是否有建议操作
+        suggested_action = self.state.get_next_suggested_action()
+        if suggested_action:
+            logger.info(f"发现建议操作: {suggested_action}, type of actions: {type(self.available_actions)}, available_actions: {self.available_actions}")
+            if suggested_action == "take_over_browser":
+                # 如果建议操作是"用户接管浏览器"，则直接执行该action
+                logger.info(f"执行用户接管浏览器操作")            
+                # 直接执行该操作
+                try:
+                    action_result = await self.controller.registry.execute_action(
+                        "take_over_browser",  # 直接使用action名称
+                        {"browser": self.browser_context} # 传入browser_context作为参数
+                    )
+                 
+                    logger.info(f"用户接管操作执行结果: {action_result.extracted_content}")
+                    # 设置用户接管状态
+                    self.state.set_user_control_active(True)
+                    return  # 执行完用户接管后，直接返回，等待用户完成操作
+                except Exception as e:
+                    logger.error(f"执行用户接管操作失败: {str(e)}")
+
+        # 以下是原始的step方法代码
+        if self.state.stopped:
+            logger.info("Agent has been stopped")
+            return
+
+        # Check if any external stopping condition
+        if self.state.is_stop_requested():
+            await self._check_if_should_stop()
+
         logger.info(f"\n📍 Step {self.state.n_steps}")
         state = None
         model_output = None

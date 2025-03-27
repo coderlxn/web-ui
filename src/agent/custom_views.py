@@ -1,10 +1,17 @@
+import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Type
-import uuid
 
-from browser_use.agent.views import AgentOutput, AgentState, ActionResult, AgentHistoryList, MessageManagerState
+from browser_use.agent.views import (
+    ActionResult,
+    AgentHistoryList,
+    AgentOutput,
+    MessageManagerState,
+)
 from browser_use.controller.registry.views import ActionModel
 from pydantic import BaseModel, ConfigDict, Field, create_model
+
+from src.utils.agent_state import AgentState
 
 
 @dataclass
@@ -51,17 +58,12 @@ class CustomAgentOutput(AgentOutput):
         return model_
 
 
-class CustomAgentState(BaseModel):
-    agent_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+class CustomAgentState(AgentState):
     n_steps: int = 1
     consecutive_failures: int = 0
     last_result: Optional[List['ActionResult']] = None
     history: AgentHistoryList = Field(default_factory=lambda: AgentHistoryList(history=[]))
     last_plan: Optional[str] = None
     paused: bool = False
-    stopped: bool = False
-
-    message_manager_state: MessageManagerState = Field(default_factory=MessageManagerState)
-
     last_action: Optional[List['ActionModel']] = None
     extracted_content: str = ''
