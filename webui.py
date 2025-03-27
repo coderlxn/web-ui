@@ -737,10 +737,48 @@ def create_ui(config, theme_name="Ocean"):
         padding: 15px;
         border-radius: 10px;
     }
+    .vnc-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .vnc-content {
+        width: 90%;
+        height: 90%;
+        background: white;
+        border-radius: 10px;
+        position: relative;
+    }
+    .vnc-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 10px;
+    }
+    .close-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: red;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
     """
 
     with gr.Blocks(
-            title="Browser Use WebUI", theme=theme_map[theme_name], css=css
+            title="Browser Use WebUI", 
+            theme=theme_map[theme_name], 
+            css=css
     ) as demo:
         with gr.Row():
             gr.Markdown(
@@ -960,6 +998,12 @@ def create_ui(config, theme_name="Ocean"):
                         visible=False
                     )
 
+                # 添加VNC弹出窗口容器
+                vnc_modal = gr.HTML(
+                    value="",
+                    visible=True
+                )
+
                 gr.Markdown("### Results")
                 with gr.Row():
                     with gr.Column():
@@ -1051,14 +1095,25 @@ def create_ui(config, theme_name="Ocean"):
                 # 设置状态
                 _global_agent_state.set_user_control_active(True)
                 
-                # 使用全局agent_state设置下一个建议操作
-                # _global_agent_state.suggest_next_action("take_over_browser")
-                # logger.info("已向Agent建议执行'take_over_browser'操作")
+                # 创建新窗口链接
+                # vnc_url = "http://127.0.0.1:6080/vnc.html?autoconnect=true&password=PASSWORD"
+                vnc_url = "http://127.0.0.1:8080/index.html"
+                
+                # 显示VNC窗口 - 使用HTML直接嵌入iframe
+                vnc_html = f"""
+                <div class="vnc-popup" id="vnc-popup">
+                    <div class="vnc-content">
+                        <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭</button>
+                        <iframe class="vnc-iframe" src="{vnc_url}"></iframe>
+                    </div>
+                </div>
+                """
                 
                 return (
                     gr.update(interactive=False),  # take_control_button
                     gr.update(interactive=True),  # finish_control_button
-                    "当前状态：请求用户接管中 - 等待Agent响应"  # user_control_status
+                    "当前状态：请求用户接管中 - 等待Agent响应",  # user_control_status
+                    vnc_html  # vnc_modal
                 )
             
             # 用户完成操作
@@ -1069,23 +1124,29 @@ def create_ui(config, theme_name="Ocean"):
                 # 重置用户接管状态
                 _global_agent_state.set_user_control_active(False)
                 
+                # 隐藏VNC窗口
+                vnc_html = """
+                <div style="display:none"></div>
+                """
+                
                 return (
                     gr.update(interactive=True),  # take_control_button
                     gr.update(interactive=False),  # finish_control_button
-                    "当前状态：已将控制权交还给Agent"  # user_control_status
+                    "当前状态：已将控制权交还给Agent",  # user_control_status
+                    vnc_html  # vnc_modal
                 )
             
             # 绑定用户交互按钮事件
             take_control_button.click(
                 fn=take_browser_control,
                 inputs=[],
-                outputs=[take_control_button, finish_control_button, user_control_status]
+                outputs=[take_control_button, finish_control_button, user_control_status, vnc_modal]
             )
             
             finish_control_button.click(
                 fn=finish_browser_control,
                 inputs=[],
-                outputs=[take_control_button, finish_control_button, user_control_status]
+                outputs=[take_control_button, finish_control_button, user_control_status, vnc_modal]
             )
             
             # 初始状态设置 - 不可点击完成操作按钮
