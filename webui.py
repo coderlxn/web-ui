@@ -33,7 +33,12 @@ from src.utils.default_config_settings import (
     save_current_config,
     update_ui_from_config,
 )
-from src.utils.utils import capture_screenshot, get_latest_files, update_model_dropdown
+from src.utils.utils import (
+    MissingAPIKeyError,
+    capture_screenshot,
+    get_latest_files,
+    update_model_dropdown,
+)
 
 # Global variables for persistence
 _global_browser = None
@@ -244,8 +249,9 @@ async def run_browser_agent(
             gr.update(interactive=True)  # Re-enable run button
         )
 
-    except gr.Error:
-        raise
+    except MissingAPIKeyError as e:
+        logger.error(str(e))
+        raise gr.Error(str(e), print_exception=False)
 
     except Exception as e:
         import traceback
@@ -538,8 +544,7 @@ async def run_with_stream(
             max_input_tokens=max_input_tokens
         )
         # Add HTML content at the start of the result array
-        html_content = f"<h1 style='width:{stream_vw}vw; height:{stream_vh}vh'>Using browser...</h1>"
-        yield [html_content] + list(result)
+        yield [gr.update(visible=False)] + list(result)
     else:
         try:
             # Run the browser agent in the background
@@ -591,7 +596,7 @@ async def run_with_stream(
 
                 if _global_agent and _global_agent.state.stopped:
                     yield [
-                        html_content,
+                        gr.HTML(value=html_content, visible=True),
                         final_result,
                         errors,
                         model_actions,
@@ -605,7 +610,7 @@ async def run_with_stream(
                     break
                 else:
                     yield [
-                        html_content,
+                        gr.HTML(value=html_content, visible=True),
                         final_result,
                         errors,
                         model_actions,
@@ -632,7 +637,7 @@ async def run_with_stream(
                 errors = f"Agent error: {str(e)}"
 
             yield [
-                html_content,
+                gr.HTML(value=html_content, visible=True),
                 final_result,
                 errors,
                 model_actions,
@@ -647,7 +652,9 @@ async def run_with_stream(
         except Exception as e:
             import traceback
             yield [
-                f"<h1 style='width:{stream_vw}vw; height:{stream_vh}vh'>Waiting for browser session...</h1>",
+                gr.HTML(
+                    value=f"<h1 style='width:{stream_vw}vw; height:{stream_vh}vh'>Waiting for browser session...</h1>",
+                    visible=True),
                 "",
                 f"Error: {str(e)}\n{traceback.format_exc()}",
                 "",
@@ -950,6 +957,7 @@ def create_ui(config, theme_name="Ocean"):
                     browser_view = gr.HTML(
                         value="<h1 style='width:80vw; height:50vh'>Waiting for browser session...</h1>",
                         label="Live Browser View",
+                        visible=False
                     )
 
                 gr.Markdown("### Results")
@@ -1125,13 +1133,13 @@ def create_ui(config, theme_name="Ocean"):
 
             with gr.TabItem("📁 UI Configuration", id=8):
                 config_file_input = gr.File(
-                    label="Load Config File",
+                    label="Load UI Settings from Config File",
                     file_types=[".pkl"],
                     interactive=True
                 )
                 with gr.Row():
-                    load_config_button = gr.Button("Load Existing Config From File", variant="primary")
-                    save_config_button = gr.Button("Save Current Config", variant="primary")
+                    load_config_button = gr.Button("Load Config", variant="primary")
+                    save_config_button = gr.Button("Save UI Settings", variant="primary")
 
                 config_status = gr.Textbox(
                     label="Status",
