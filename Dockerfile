@@ -55,6 +55,7 @@ WORKDIR /app
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright and browsers with system dependencies
