@@ -4,7 +4,8 @@ import threading
 import time
 import uuid
 
-from browser_use.agent.views import ActionResult, AgentHistoryList, MessageManagerState
+from browser_use.agent.message_manager.views import MessageManagerState
+from browser_use.agent.views import ActionResult, AgentHistoryList
 
 logger = logging.getLogger(__name__)
 

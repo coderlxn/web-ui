@@ -1,26 +1,32 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Type, Dict
+from typing import Dict, List, Optional, Type
 
-from browser_use.agent.message_manager.service import MessageManager
-from browser_use.agent.message_manager.views import MessageHistory
-from browser_use.agent.prompts import SystemPrompt, AgentMessagePrompt
-from browser_use.agent.views import ActionResult, AgentStepInfo, ActionModel
+from browser_use.agent.message_manager.service import (
+    MessageManager,
+    MessageManagerSettings,
+)
+from browser_use.agent.message_manager.views import MessageHistory, MessageManagerState
+from browser_use.agent.prompts import AgentMessagePrompt, SystemPrompt
+from browser_use.agent.views import (
+    ActionModel,
+    ActionResult,
+    AgentOutput,
+    AgentStepInfo,
+)
 from browser_use.browser.views import BrowserState
-from browser_use.agent.message_manager.service import MessageManagerSettings
-from browser_use.agent.views import ActionResult, AgentOutput, AgentStepInfo, MessageManagerState
-from langchain_core.language_models import BaseChatModel
 from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
     ToolMessage,
-    SystemMessage
 )
 from langchain_openai import ChatOpenAI
+
 from ..utils.llm import DeepSeekR1ChatOpenAI
 from .custom_prompts import CustomAgentMessagePrompt
 
