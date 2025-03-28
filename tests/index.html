@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>测试页面</h1>
+
+        <div class="form-group">
+            <label for="name">姓名：</label>
+            <input type="text" id="name" placeholder="请输入您的姓名">
+        </div>
+
+        <div class="form-group">
+            <label for="message">留言：</label>
+            <textarea id="message" rows="4" placeholder="请输入您的留言"></textarea>
+        </div>
+
+        <button id="submit">提交</button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('submit').addEventListener('click', function () {
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
+
+            if (!name || !message) {
+                alert('请填写所有字段！');
+                return;
+            }
+
+            const result = document.getElementById('result');
+            result.innerHTML = `<p><strong>${name}</strong>，您的留言已收到：</p><p>${message}</p>`;
+            result.style.display = 'block';
+        });
+    </script>
+</body>
+
+</html>

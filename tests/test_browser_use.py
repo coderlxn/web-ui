@@ -31,7 +31,6 @@ async def test_browser_use_org():
     #     base_url=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
     #     api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
     # )
-
     # llm = utils.get_llm_model(
     #     provider="deepseek",
     #     model_name="deepseek-chat",
@@ -98,12 +97,12 @@ async def test_browser_use_org():
 
 
 async def test_browser_use_custom():
-    from browser_use.browser.context import BrowserContextWindowSize
     from browser_use.browser.browser import BrowserConfig
+    from browser_use.browser.context import BrowserContextWindowSize
     from playwright.async_api import async_playwright
 
     from src.agent.custom_agent import CustomAgent
-    from src.agent.custom_prompts import CustomSystemPrompt, CustomAgentMessagePrompt
+    from src.agent.custom_prompts import CustomAgentMessagePrompt, CustomSystemPrompt
     from src.browser.custom_browser import CustomBrowser
     from src.browser.custom_context import BrowserContextConfig
     from src.controller.custom_controller import CustomController
@@ -238,12 +237,12 @@ async def test_browser_use_custom():
 
 
 async def test_browser_use_parallel():
+    from browser_use.browser.browser import Browser, BrowserConfig
     from browser_use.browser.context import BrowserContextWindowSize
-    from browser_use.browser.browser import BrowserConfig
     from playwright.async_api import async_playwright
-    from browser_use.browser.browser import Browser
+
     from src.agent.custom_agent import CustomAgent
-    from src.agent.custom_prompts import CustomSystemPrompt, CustomAgentMessagePrompt
+    from src.agent.custom_prompts import CustomAgentMessagePrompt, CustomSystemPrompt
     from src.browser.custom_browser import CustomBrowser
     from src.browser.custom_context import BrowserContextConfig
     from src.controller.custom_controller import CustomController

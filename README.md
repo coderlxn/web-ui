@@ -1,3 +1,61 @@
+# 浏览器代理网页界面
+
+这个项目是一个用于控制浏览器的AI代理的Web界面，它使用Gradio构建UI，支持多种浏览器操作模式。
+
+## 项目结构
+
+```
+├── app.py                  # 主入口点
+├── webui.py                # 原始单文件版本(保留用于参考)
+├── src/                    # 源代码目录
+│   ├── agent_runners.py    # Agent运行器，负责启动和管理代理
+│   ├── globals.py          # 全局变量
+│   ├── agent/              # Agent相关代码
+│   ├── browser/            # 浏览器相关代码
+│   ├── controller/         # 控制器相关代码
+│   ├── ui/                 # UI相关代码
+│   │   ├── themes.py       # 主题定义
+│   │   ├── ui_builder.py   # UI构建函数
+│   │   └── ui_handlers.py  # UI事件处理函数
+│   └── utils/              # 工具类
+│       ├── agent_state.py  # Agent状态管理
+│       ├── deep_research.py # 深度研究功能
+│       ├── default_config_settings.py # 默认配置
+│       ├── env_utils.py    # 环境变量工具
+│       └── utils.py        # 通用工具函数
+```
+
+## 使用方法
+
+1. 安装依赖：
+```bash
+pip install -r requirements.txt
+```
+
+2. 运行应用：
+```bash
+python app.py
+```
+
+3. 可选参数：
+```bash
+python app.py --ip 0.0.0.0 --port 7788 --theme Ocean
+```
+
+## 主要功能
+
+- **代理设置**：配置代理类型、最大步骤数和每步最大动作数
+- **LLM设置**：配置语言模型提供商、模型名称和参数
+- **浏览器设置**：配置浏览器行为、窗口大小和录制选项
+- **运行代理**：执行定义的任务并显示结果
+- **深度研究**：执行深度研究任务
+- **录制管理**：查看和管理录制的浏览器会话
+- **配置管理**：保存和加载UI配置
+
+## 贡献
+
+欢迎贡献代码、报告问题或提供改进建议。
+
 <img src="./assets/web-ui.png" alt="Browser Use Web UI" width="full"/>
 
 <br/>

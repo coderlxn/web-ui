@@ -58,11 +58,22 @@ class CustomController(Controller):
             logger.info("浏览器控制权已交给用户，等待用户操作...")
             # 设置状态表示用户接管开始
             self.agent_state.set_user_control_active(True)
+            
+            # 打印当前时间戳，便于调试
+            logger.info(f"设置用户接管状态，时间戳: {self.agent_state.get_last_takeover_time()}")
+            
+            # 检查状态是否正确设置
+            if not self.agent_state.is_user_control_active():
+                logger.error("用户接管状态设置失败！")
+                self.agent_state.set_user_control_active(True)  # 再次尝试设置
+                logger.info(f"重新尝试设置接管状态，时间戳: {self.agent_state.get_last_takeover_time()}")
                         
             # 等待用户完成操作
             while self.agent_state.is_user_control_active():
                 # logger.info(f"用户接管状态: {self.agent_state.is_user_control_active()}")
                 await asyncio.sleep(0.5)  # 每0.5秒检查一次状态
+            
+            logger.info("用户操作完成，恢复LLM控制")
             
             # 重置状态
             self.agent_state.set_user_control_active(False)

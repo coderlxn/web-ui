@@ -1,9 +1,12 @@
 import asyncio
+import logging
+import threading
 import time
 import uuid
 
 from browser_use.agent.views import ActionResult, AgentHistoryList, MessageManagerState
 
+logger = logging.getLogger(__name__)
 
 class AgentState:
     _instance = None
@@ -25,6 +28,8 @@ class AgentState:
             self.last_result = []  # 添加last_result属性，用于记录上一个操作的结果
             self.user_control_active = False  # 添加user_control_active属性，用于标记是否处于用户接管状态
             self.last_takeover_time = 0  # 添加时间戳字段，记录最后一次请求接管的时间
+            self._polling_thread = None  # 用于存储轮询线程
+            self._stop_polling = False  # 用于停止轮询线程
 
     def __new__(cls):
         if cls._instance is None:
@@ -75,3 +80,35 @@ class AgentState:
     def get_last_takeover_time(self) -> float:
         """获取最后一次请求接管的时间戳"""
         return self.last_takeover_time
+        
+    def start_status_polling(self):
+        """启动状态轮询，周期性触发状态更新，确保前端能检测到变化"""
+        if self._polling_thread is not None and self._polling_thread.is_alive():
+            logger.info("状态轮询线程已在运行")
+            return
+            
+        self._stop_polling = False
+        
+        def _polling_func():
+            logger.info("启动状态轮询线程")
+            count = 0
+            while not self._stop_polling:
+                # 每隔3秒微调时间戳，确保前端能检测到变化
+                if count % 3 == 0 and self.user_control_active:
+                    old_time = self.last_takeover_time
+                    self.last_takeover_time = time.time()
+                    logger.info(f"状态轮询: 更新接管时间戳 {old_time} -> {self.last_takeover_time}")
+                
+                time.sleep(1)
+                count += 1
+                
+        self._polling_thread = threading.Thread(target=_polling_func, daemon=True)
+        self._polling_thread.start()
+        
+    def stop_status_polling(self):
+        """停止状态轮询线程"""
+        if self._polling_thread is not None and self._polling_thread.is_alive():
+            logger.info("停止状态轮询线程")
+            self._stop_polling = True
+            self._polling_thread.join(timeout=2.0)
+            self._polling_thread = None

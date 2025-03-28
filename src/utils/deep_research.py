@@ -4,31 +4,33 @@ from dotenv import load_dotenv
 
 load_dotenv()
 import asyncio
-import os
-import sys
+import json
 import logging
+import os
+import re
+import sys
 from pprint import pprint
 from uuid import uuid4
-from src.utils import utils
-from src.agent.custom_agent import CustomAgent
-import json
-import re
+
 from browser_use.agent.service import Agent
-from browser_use.browser.browser import BrowserConfig, Browser
 from browser_use.agent.views import ActionResult
-from browser_use.browser.context import BrowserContext
-from browser_use.controller.service import Controller, DoneAction
-from main_content_extractor import MainContentExtractor
-from langchain.schema import SystemMessage, HumanMessage
-from json_repair import repair_json
-from src.agent.custom_prompts import CustomSystemPrompt, CustomAgentMessagePrompt
-from src.controller.custom_controller import CustomController
-from src.browser.custom_browser import CustomBrowser
-from src.browser.custom_context import BrowserContextConfig, BrowserContext
+from browser_use.browser.browser import Browser, BrowserConfig
 from browser_use.browser.context import (
+    BrowserContext,
     BrowserContextConfig,
     BrowserContextWindowSize,
 )
+from browser_use.controller.service import Controller, DoneAction
+from json_repair import repair_json
+from langchain.schema import HumanMessage, SystemMessage
+from main_content_extractor import MainContentExtractor
+
+from src.agent.custom_agent import CustomAgent
+from src.agent.custom_prompts import CustomAgentMessagePrompt, CustomSystemPrompt
+from src.browser.custom_browser import CustomBrowser
+from src.browser.custom_context import BrowserContext, BrowserContextConfig
+from src.controller.custom_controller import CustomController
+from src.utils import utils
 
 logger = logging.getLogger(__name__)
 
