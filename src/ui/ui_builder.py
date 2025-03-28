@@ -51,8 +51,8 @@ def create_ui(config, theme_name="Ocean"):
         align-items: center;
     }
     .vnc-content {
-        width: 90%;
-        height: 90%;
+        width: 95%;
+        height: 95%;
         background: white;
         border-radius: 10px;
         position: relative;
@@ -100,14 +100,16 @@ def create_ui(config, theme_name="Ocean"):
                 }
                 setTimeout(checkTakeoverStatus, 1000); // 每秒检查一次
             }
+            console.log("polling_js loaded")
             
             // 页面加载后开始轮询
             setTimeout(checkTakeoverStatus, 1000);
         </script>
-        """)
+        <button id="polling_trigger" style="display: none;">Trigger Polling</button>
+        """, visible=True)
 
         # 添加轮询触发器
-        polling_trigger = gr.Button(elem_id="polling_trigger", visible=False)
+        polling_trigger = gr.Button(elem_id="polling_trigger", visible=True)
 
         with gr.Row():
             gr.Markdown(

@@ -103,7 +103,7 @@ def check_takeover_requests():
     
     # 检测新的接管请求（状态为活跃且时间戳更新了）
     new_request = is_active and last_time > _last_known_takeover_time
-    
+    logger.info(f"check_takeover_requests values {is_active} {last_time} {new_request}")
     if new_request:
         # 更新已知的最后接管时间
         _last_known_takeover_time = last_time
@@ -122,7 +122,7 @@ def check_takeover_requests():
                 <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭窗口</button>
                 <iframe class="vnc-iframe" src="{vnc_url}"></iframe>
             </div>
-        </div>
+        </div>        
         """
         
         logger.info("检测到LLM触发的用户接管请求，显示接管提示")
@@ -161,20 +161,32 @@ def take_browser_control():
     _last_known_takeover_time = _global_agent_state.get_last_takeover_time()
     
     # 创建新窗口链接
-    vnc_url = "http://127.0.0.1:8080/index.html"
-    
+    # vnc_url = "http://127.0.0.1:8080/index.html"
+    vnc_url = "http://192.168.1.133:6080/vnc.html?autoconnect=true&password=youvncpassword"
+
     # 显示VNC窗口 - 使用HTML直接嵌入iframe
     vnc_html = f"""
+    <script>
+        function finish_browser_control_js() {{
+            // 使用Gradio提供的方法调用Python函数
+            // 这会触发finish_browser_control()的执行
+            document.querySelectorAll('button').forEach(button => {{
+                if (button.textContent.includes('完成操作')) {{
+                    button.click();
+                }}
+            }});
+        }}
+    </script>
     <div class="vnc-popup" id="vnc-popup">
         <div class="vnc-content">
             <div class="vnc-header">
                 <h3 style="margin:0; color:#333;">浏览器接管模式</h3>
                 <p style="margin:10px 0 0; color:#666;">请在下方窗口中完成需要的操作，操作完成后点击"完成操作"按钮</p>
             </div>
-            <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭窗口</button>
+            <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none'; finish_browser_control_js();">关闭窗口</button>
             <iframe class="vnc-iframe" src="{vnc_url}"></iframe>
         </div>
-    </div>
+    </div>    
     """
     
     return (
@@ -207,7 +219,7 @@ def finish_browser_control():
     <script>
         setTimeout(function() {
             document.getElementById('success-message').style.display = 'none';
-        }, 5000);
+        }, 2000);
     </script>
     """
     
