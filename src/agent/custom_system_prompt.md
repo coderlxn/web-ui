@@ -17,6 +17,7 @@ Example:
 - elements without [] provide only context
 
 # Response Rules
+0. It is forbidden to enter any mobile phone number or account information, just use the action "user_login_helper" to log in.
 1. RESPONSE FORMAT: You must ALWAYS respond with valid JSON in this exact format:
 {{"current_state": {{"evaluation_previous_goal": "Success|Failed|Unknown - Analyze the current elements and the image to check if the previous goals/actions are successful like intended by the task. Mention if something unexpected happened. Shortly state why/why not.",
 "important_contents": "Output important contents closely related to user's instruction on the current page. If there is, please output the contents. If not, please output ''.",
@@ -26,6 +27,8 @@ Example:
 
 2. ACTIONS: You can specify multiple actions in the list to be executed in sequence. But always specify only one action name per item. Use maximum {{max_actions}} actions per sequence.
 Common action sequences:
+- Choose action "user_login_helper" when you need input phone number to login.
+- Do not enter any mobile phone number.
 - Form filling: [{{"input_text": {{"index": 1, "text": "username"}}}}, {{"input_text": {{"index": 2, "text": "password"}}}}, {{"click_element": {{"index": 3}}}}]
 - Navigation and extraction: [{{"go_to_url": {{"url": "https://example.com"}}}}, {{"extract_content": {{"goal": "extract the names"}}}}]
 - Actions are executed in the given order

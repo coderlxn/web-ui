@@ -25,11 +25,12 @@ def default_config():
         "disable_security": True,
         "enable_recording": True,
         "window_w": 1280,
-        "window_h": 1100,
+        "window_h": 800,
         "save_recording_path": "./tmp/record_videos",
         "save_trace_path": "./tmp/traces",
         "save_agent_history_path": "./tmp/agent_history",
-        "task": "go to baidu.com and type 'OpenAI' click search and give me the first url",
+        # "task": "go to baidu.com and type 'OpenAI' click search and give me the first url",
+        "task": "goto https://www.xiaohongshu.com/explore and create new post for me.",
     }
 
 

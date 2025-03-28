@@ -13,6 +13,7 @@ from browser_use.controller.views import (
     ExtractPageContentAction,
     GoToUrlAction,
     InputTextAction,
+    NoParamsAction,
     OpenTabAction,
     ScrollAction,
     SearchGoogleAction,
@@ -51,17 +52,16 @@ class CustomController(Controller):
 
             return ActionResult(extracted_content=text)
 
-        @self.registry.action("take over browser")
-        async def take_over_browser():
+        @self.registry.action("Log in using the phone number input field.", param_model=NoParamsAction)
+        async def user_login_helper(_: NoParamsAction, browser: BrowserContext):
             """暂停自动操作，让用户接管浏览器控制权"""
+            logger.info("浏览器控制权已交给用户，等待用户操作...")
             # 设置状态表示用户接管开始
             self.agent_state.set_user_control_active(True)
-            
-            logger.info("浏览器控制权已交给用户，等待用户操作...")
-            
+                        
             # 等待用户完成操作
             while self.agent_state.is_user_control_active():
-                logger.info(f"用户接管状态: {self.agent_state.is_user_control_active()}")
+                # logger.info(f"用户接管状态: {self.agent_state.is_user_control_active()}")
                 await asyncio.sleep(0.5)  # 每0.5秒检查一次状态
             
             # 重置状态

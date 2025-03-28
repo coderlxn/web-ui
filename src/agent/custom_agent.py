@@ -183,7 +183,7 @@ class CustomAgent(Agent):
         logger.info(f"🎯 Next Goal: {response.current_state.next_goal}")
         for i, action in enumerate(response.action):
             logger.info(
-                f"🛠️  Action {i + 1}/{len(response.action)}: {action.model_dump_json(exclude_unset=True)}"
+                f"🛠️  Action {i + 1}/{len(response.action)}: {repr(action)} {action.model_dump_json(exclude_unset=True)}"
             )
 
     def _setup_action_models(self) -> None:
@@ -216,6 +216,22 @@ class CustomAgent(Agent):
     @time_execution_async("--get_next_action")
     async def get_next_action(self, input_messages: list[BaseMessage]) -> AgentOutput:
         """Get next action from LLM based on current state"""
+        
+        # 输出可用actions列表
+        # logger.info(f"🛠️ Available Actions: {self.available_actions}")
+        
+        for message in input_messages:
+            if type(message.content) == list:
+                for msg in message.content:
+                    if type(msg) == dict:
+                        if 'text' in msg and type(msg['text']) == str:
+                            logger.info(f"message4: {msg['text'][:10]}")
+                        else:
+                            logger.info(f"message2: {msg.keys()}")
+                    else:
+                        logger.info(f"message1: {msg}")
+            elif not message.content.startswith("You are an AI agent designed to automate"):
+                logger.info(f"message: {message.content}")
 
         ai_message = self.llm.invoke(input_messages)
         self.message_manager._add_message_with_tokens(ai_message)
@@ -229,10 +245,20 @@ class CustomAgent(Agent):
             ai_content = ai_message.content[0]
         else:
             ai_content = ai_message.content
+        logger.info(f"ai_response: {ai_content}")
 
         ai_content = ai_content.replace("```json", "").replace("```", "")
         ai_content = repair_json(ai_content)
         parsed_json = json.loads(ai_content)
+        # 处理json中action为 one_action_name 的情况
+        if isinstance(parsed_json, dict) and 'action' in parsed_json:
+            actions = parsed_json['action']
+            for i, action in enumerate(actions):
+                if "one_action_name" in action:
+                    actions[i] = {"user_login_helper": {}}
+                    parsed_json['action'] = actions
+                    logger.info(f"处理后的action: {parsed_json}")
+                    break
         parsed: AgentOutput = self.AgentOutput(**parsed_json)
 
         if parsed is None:
@@ -319,13 +345,13 @@ class CustomAgent(Agent):
         suggested_action = self.state.get_next_suggested_action()
         if suggested_action:
             logger.info(f"发现建议操作: {suggested_action}, type of actions: {type(self.available_actions)}, available_actions: {self.available_actions}")
-            if suggested_action == "take_over_browser":
+            if suggested_action == "user_login_helper":
                 # 如果建议操作是"用户接管浏览器"，则直接执行该action
                 logger.info(f"执行用户接管浏览器操作")            
                 # 直接执行该操作
                 try:
                     action_result = await self.controller.registry.execute_action(
-                        "take_over_browser",  # 直接使用action名称
+                        "user_login_helper",  # 直接使用action名称
                         {"browser": self.browser_context} # 传入browser_context作为参数
                     )
                  

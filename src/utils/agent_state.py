@@ -1,4 +1,5 @@
 import asyncio
+import time
 import uuid
 
 from browser_use.agent.views import ActionResult, AgentHistoryList, MessageManagerState
@@ -23,6 +24,7 @@ class AgentState:
             self.extracted_content = None  # 添加extracted_content属性，用于存储提取的内容
             self.last_result = []  # 添加last_result属性，用于记录上一个操作的结果
             self.user_control_active = False  # 添加user_control_active属性，用于标记是否处于用户接管状态
+            self.last_takeover_time = 0  # 添加时间戳字段，记录最后一次请求接管的时间
 
     def __new__(cls):
         if cls._instance is None:
@@ -62,7 +64,14 @@ class AgentState:
     def set_user_control_active(self, active: bool):
         """设置用户接管状态"""
         self.user_control_active = active
+        if active:
+            # 如果是激活用户接管，记录时间戳
+            self.last_takeover_time = time.time()
 
     def is_user_control_active(self) -> bool:
         """检查是否处于用户接管状态"""
         return self.user_control_active
+
+    def get_last_takeover_time(self) -> float:
+        """获取最后一次请求接管的时间戳"""
+        return self.last_takeover_time

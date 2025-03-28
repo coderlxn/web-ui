@@ -44,6 +44,7 @@ from src.utils.utils import (
 _global_browser = None
 _global_browser_context = None
 _global_agent = None
+_last_known_takeover_time = 0  # 记录前端已知的最后接管时间
 
 # Create the global agent state instance
 _global_agent_state = AgentState()
@@ -743,7 +744,7 @@ def create_ui(config, theme_name="Ocean"):
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0,0,0,0.8);
         z-index: 9999;
         display: flex;
         justify-content: center;
@@ -755,12 +756,21 @@ def create_ui(config, theme_name="Ocean"):
         background: white;
         border-radius: 10px;
         position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .vnc-header {
+        background: #f0f0f0;
+        padding: 15px;
+        border-bottom: 1px solid #ccc;
+        text-align: center;
     }
     .vnc-iframe {
         width: 100%;
-        height: 100%;
+        height: calc(100% - 70px);
         border: none;
-        border-radius: 10px;
+        border-radius: 0 0 10px 10px;
     }
     .close-button {
         position: absolute;
@@ -780,6 +790,25 @@ def create_ui(config, theme_name="Ocean"):
             theme=theme_map[theme_name], 
             css=css
     ) as demo:
+        # 添加JavaScript轮询代码
+        polling_js = gr.HTML("""
+        <script>
+            function checkTakeoverStatus() {
+                // 通过调用隐藏元素的点击事件来触发后端函数
+                if(document.getElementById('polling_trigger')) {
+                    document.getElementById('polling_trigger').click();
+                }
+                setTimeout(checkTakeoverStatus, 1000); // 每秒检查一次
+            }
+            
+            // 页面加载后开始轮询
+            setTimeout(checkTakeoverStatus, 1000);
+        </script>
+        """)
+
+        # 添加轮询触发器
+        polling_trigger = gr.Button(elem_id="polling_trigger", visible=False)
+
         with gr.Row():
             gr.Markdown(
                 """
@@ -1088,22 +1117,92 @@ def create_ui(config, theme_name="Ocean"):
                 outputs=[stop_research_button, research_button],
             )
 
+            # 检查用户接管状态的函数
+            def check_takeover_requests():
+                global _global_agent_state, _last_known_takeover_time
+                
+                if not _global_agent_state:
+                    return (
+                        gr.update(),  # take_control_button
+                        gr.update(),  # finish_control_button
+                        gr.update(),  # user_control_status
+                        gr.update()   # vnc_modal
+                    )
+                
+                # 检查当前状态
+                is_active = _global_agent_state.is_user_control_active()
+                last_time = _global_agent_state.get_last_takeover_time()
+                
+                # 检测新的接管请求（状态为活跃且时间戳更新了）
+                new_request = is_active and last_time > _last_known_takeover_time
+                
+                if new_request:
+                    # 更新已知的最后接管时间
+                    _last_known_takeover_time = last_time
+                    
+                    # 创建VNC链接
+                    vnc_url = "http://127.0.0.1:8080/index.html"
+                    
+                    # 创建提示弹窗
+                    takeover_html = f"""
+                    <div class="vnc-popup" id="vnc-popup">
+                        <div class="vnc-content">
+                            <div class="vnc-header">
+                                <h3 style="margin:0; color:#333;">⚠️ LLM请求用户接管浏览器</h3>
+                                <p style="margin:10px 0 0; color:#666;">AI已请求您临时接管浏览器控制权，可能需要您完成登录或其他敏感操作</p>
+                            </div>
+                            <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭窗口</button>
+                            <iframe class="vnc-iframe" src="{vnc_url}"></iframe>
+                        </div>
+                    </div>
+                    """
+                    
+                    logger.info("检测到LLM触发的用户接管请求，显示接管提示")
+                    
+                    return (
+                        gr.update(interactive=False),  # take_control_button
+                        gr.update(interactive=True),   # finish_control_button
+                        "当前状态：LLM请求用户接管 - 请在弹出窗口中完成所需操作后点击'完成操作'按钮",  # user_control_status
+                        takeover_html  # vnc_modal
+                    )
+                elif is_active:
+                    # 接管状态继续，但不是新请求
+                    return (
+                        gr.update(interactive=False),  # take_control_button
+                        gr.update(interactive=True),   # finish_control_button
+                        "当前状态：用户接管模式中",  # user_control_status
+                        gr.update()  # vnc_modal 不更新
+                    )
+                else:
+                    # 非接管状态
+                    return (
+                        gr.update(interactive=True),   # take_control_button
+                        gr.update(interactive=False),  # finish_control_button
+                        "当前状态：Agent自动操作中",  # user_control_status
+                        """<div style="display:none"></div>"""  # 隐藏VNC
+                    )
+            
             # 用户接管浏览器
             def take_browser_control():
-                global _global_agent_state
+                global _global_agent_state, _last_known_takeover_time
                 
                 # 设置状态
                 _global_agent_state.set_user_control_active(True)
+                # 更新已知的最后接管时间
+                _last_known_takeover_time = _global_agent_state.get_last_takeover_time()
                 
                 # 创建新窗口链接
-                # vnc_url = "http://127.0.0.1:6080/vnc.html?autoconnect=true&password=PASSWORD"
                 vnc_url = "http://127.0.0.1:8080/index.html"
                 
                 # 显示VNC窗口 - 使用HTML直接嵌入iframe
                 vnc_html = f"""
                 <div class="vnc-popup" id="vnc-popup">
                     <div class="vnc-content">
-                        <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭</button>
+                        <div class="vnc-header">
+                            <h3 style="margin:0; color:#333;">浏览器接管模式</h3>
+                            <p style="margin:10px 0 0; color:#666;">请在下方窗口中完成需要的操作，操作完成后点击"完成操作"按钮</p>
+                        </div>
+                        <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭窗口</button>
                         <iframe class="vnc-iframe" src="{vnc_url}"></iframe>
                     </div>
                 </div>
@@ -1112,7 +1211,7 @@ def create_ui(config, theme_name="Ocean"):
                 return (
                     gr.update(interactive=False),  # take_control_button
                     gr.update(interactive=True),  # finish_control_button
-                    "当前状态：请求用户接管中 - 等待Agent响应",  # user_control_status
+                    "当前状态：用户接管模式 - 请在弹出窗口中完成操作",  # user_control_status
                     vnc_html  # vnc_modal
                 )
             
@@ -1129,10 +1228,23 @@ def create_ui(config, theme_name="Ocean"):
                 <div style="display:none"></div>
                 """
                 
+                # 显示成功提示
+                success_message = """
+                <div id="success-message" style="padding:10px; background-color:#e6f7e6; border-left:4px solid #4caf50; margin:10px 0; display:flex; align-items:center;">
+                    <span style="font-size:20px; margin-right:10px;">✅</span>
+                    <span>操作已完成，控制权已交还给AI助手</span>
+                </div>
+                <script>
+                    setTimeout(function() {
+                        document.getElementById('success-message').style.display = 'none';
+                    }, 5000);
+                </script>
+                """
+                
                 return (
                     gr.update(interactive=True),  # take_control_button
                     gr.update(interactive=False),  # finish_control_button
-                    "当前状态：已将控制权交还给Agent",  # user_control_status
+                    success_message,  # user_control_status - 用HTML替换了纯文本
                     vnc_html  # vnc_modal
                 )
             
@@ -1149,8 +1261,14 @@ def create_ui(config, theme_name="Ocean"):
                 outputs=[take_control_button, finish_control_button, user_control_status, vnc_modal]
             )
             
+            # 绑定轮询触发器
+            polling_trigger.click(
+                fn=check_takeover_requests,
+                inputs=[],
+                outputs=[take_control_button, finish_control_button, user_control_status, vnc_modal]
+            )
+            
             # 初始状态设置 - 不可点击完成操作按钮
-            # 注意：不能直接使用Button.update，需要在UI加载后处理
             def init_ui_state():
                 return gr.update(interactive=False)
             
