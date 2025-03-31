@@ -52,8 +52,6 @@ services:
       - seccomp=unconfined
     tmpfs:
       - /tmp
-    working_dir: /app
-    command: [ "/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "5901" ]
       interval: 10s
