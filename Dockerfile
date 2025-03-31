@@ -60,7 +60,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # replace source
-RUN sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list
+RUN test -e /etc/apt/sources.list || echo "deb http://mirrors.aliyun.com/debian bookworm main" > /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/debian-security bookworm-security main" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/debian bookworm-updates main" >> /etc/apt/sources.list
+RUN apt-get update
 
 # Install Playwright and browsers with system dependencies
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
