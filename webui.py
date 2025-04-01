@@ -1192,7 +1192,7 @@ def create_ui(config, theme_name="Ocean"):
                 _last_known_takeover_time = _global_agent_state.get_last_takeover_time()
                 
                 # 创建新窗口链接
-                vnc_url = "http://127.0.0.1:8080/index.html"
+                vnc_url = "http://192.168.1.133:6080/vnc.html?autoconnect=true&password=youvncpassword"
                 
                 # 显示VNC窗口 - 使用HTML直接嵌入iframe
                 vnc_html = f"""
@@ -1237,7 +1237,7 @@ def create_ui(config, theme_name="Ocean"):
                 <script>
                     setTimeout(function() {
                         document.getElementById('success-message').style.display = 'none';
-                    }, 5000);
+                    }, 2000);
                 </script>
                 """
                 
