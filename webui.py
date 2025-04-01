@@ -790,22 +790,6 @@ def create_ui(config, theme_name="Ocean"):
             theme=theme_map[theme_name], 
             css=css
     ) as demo:
-        # 添加JavaScript轮询代码
-        polling_js = gr.HTML("""
-        <script>
-            function checkTakeoverStatus() {
-                // 通过调用隐藏元素的点击事件来触发后端函数
-                if(document.getElementById('polling_trigger')) {
-                    document.getElementById('polling_trigger').click();
-                }
-                setTimeout(checkTakeoverStatus, 1000); // 每秒检查一次
-            }
-            
-            // 页面加载后开始轮询
-            setTimeout(checkTakeoverStatus, 1000);
-        </script>
-        """)
-
         # 添加轮询触发器
         polling_trigger = gr.Button(elem_id="polling_trigger", visible=False)
 
@@ -1119,6 +1103,7 @@ def create_ui(config, theme_name="Ocean"):
 
             # 检查用户接管状态的函数
             def check_takeover_requests():
+                # logger.info("check_takeover_requests called")
                 global _global_agent_state, _last_known_takeover_time
                 
                 if not _global_agent_state:
@@ -1132,16 +1117,17 @@ def create_ui(config, theme_name="Ocean"):
                 # 检查当前状态
                 is_active = _global_agent_state.is_user_control_active()
                 last_time = _global_agent_state.get_last_takeover_time()
-                
+
                 # 检测新的接管请求（状态为活跃且时间戳更新了）
                 new_request = is_active and last_time > _last_known_takeover_time
-                
+                logger.info(f"check_takeover_requests is_active: {is_active}, new_request: {new_request}")
+
                 if new_request:
                     # 更新已知的最后接管时间
                     _last_known_takeover_time = last_time
                     
                     # 创建VNC链接
-                    vnc_url = "http://127.0.0.1:8080/index.html"
+                    vnc_url = "http://192.168.1.133:6080/vnc.html?autoconnect=true&password=youvncpassword"
                     
                     # 创建提示弹窗
                     takeover_html = f"""
@@ -1165,7 +1151,7 @@ def create_ui(config, theme_name="Ocean"):
                         "当前状态：LLM请求用户接管 - 请在弹出窗口中完成所需操作后点击'完成操作'按钮",  # user_control_status
                         takeover_html  # vnc_modal
                     )
-                elif is_active:
+                if is_active:
                     # 接管状态继续，但不是新请求
                     return (
                         gr.update(interactive=False),  # take_control_button
@@ -1173,27 +1159,27 @@ def create_ui(config, theme_name="Ocean"):
                         "当前状态：用户接管模式中",  # user_control_status
                         gr.update()  # vnc_modal 不更新
                     )
-                else:
-                    # 非接管状态
-                    return (
-                        gr.update(interactive=True),   # take_control_button
-                        gr.update(interactive=False),  # finish_control_button
-                        "当前状态：Agent自动操作中",  # user_control_status
-                        """<div style="display:none"></div>"""  # 隐藏VNC
-                    )
-            
+                    
+                # 非接管状态
+                return (
+                    gr.update(interactive=True),   # take_control_button
+                    gr.update(interactive=False),  # finish_control_button
+                    "当前状态：Agent自动操作中",  # user_control_status
+                    """<div style="display:none"></div>"""  # 隐藏VNC
+                )
+
             # 用户接管浏览器
             def take_browser_control():
                 global _global_agent_state, _last_known_takeover_time
-                
+
                 # 设置状态
                 _global_agent_state.set_user_control_active(True)
                 # 更新已知的最后接管时间
                 _last_known_takeover_time = _global_agent_state.get_last_takeover_time()
-                
+
                 # 创建新窗口链接
                 vnc_url = "http://192.168.1.133:6080/vnc.html?autoconnect=true&password=youvncpassword"
-                
+
                 # 显示VNC窗口 - 使用HTML直接嵌入iframe
                 vnc_html = f"""
                 <div class="vnc-popup" id="vnc-popup">
@@ -1366,6 +1352,24 @@ def create_ui(config, theme_name="Ocean"):
 
         use_own_browser.change(fn=close_global_browser)
         keep_browser_open.change(fn=close_global_browser)
+
+        # 添加JavaScript轮询代码
+        scripts = """
+        async () => {
+            function checkTakeoverStatus() {
+                // 通过调用隐藏元素的点击事件来触发后端函数
+                console.log("checkTakeoverStatus called");
+                if(document.getElementById('polling_trigger')) {
+                    document.getElementById('polling_trigger').click();
+                }
+                setTimeout(checkTakeoverStatus, 1000); // 每秒检查一次
+            }
+            
+            // 页面加载后开始轮询
+            setTimeout(checkTakeoverStatus, 1000);
+        }
+        """
+        demo.load(None,None,None,js=scripts)
 
     return demo
 
