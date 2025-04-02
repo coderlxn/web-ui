@@ -751,8 +751,8 @@ def create_ui(config, theme_name="Ocean"):
         align-items: center;
     }
     .vnc-content {
-        width: 90%;
-        height: 90%;
+        width: 96%;
+        height: 96%;
         background: white;
         border-radius: 10px;
         position: relative;
@@ -1001,7 +1001,7 @@ def create_ui(config, theme_name="Ocean"):
 
                 with gr.Row():
                     take_control_button = gr.Button("🖐️ 接管浏览器", variant="secondary", scale=1)
-                    finish_control_button = gr.Button("✅ 完成操作", variant="secondary", scale=1)
+                    finish_control_button = gr.Button("✅ 完成操作", elem_id="finish_control_button", variant="secondary", scale=1)
                     user_control_status = gr.Markdown("当前状态：Agent自动操作中")
 
                 with gr.Row():
@@ -1137,7 +1137,7 @@ def create_ui(config, theme_name="Ocean"):
                                 <h3 style="margin:0; color:#333;">⚠️ LLM请求用户接管浏览器</h3>
                                 <p style="margin:10px 0 0; color:#666;">AI已请求您临时接管浏览器控制权，可能需要您完成登录或其他敏感操作</p>
                             </div>
-                            <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭窗口</button>
+                            <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';document.getElementById('finish_control_button').click();">完成接管</button>
                             <iframe class="vnc-iframe" src="{vnc_url}"></iframe>
                         </div>
                     </div>
@@ -1188,7 +1188,7 @@ def create_ui(config, theme_name="Ocean"):
                             <h3 style="margin:0; color:#333;">浏览器接管模式</h3>
                             <p style="margin:10px 0 0; color:#666;">请在下方窗口中完成需要的操作，操作完成后点击"完成操作"按钮</p>
                         </div>
-                        <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';">关闭窗口</button>
+                        <button class="close-button" onclick="document.getElementById('vnc-popup').style.display='none';document.getElementById('finish_control_button').click();">完成接管</button>
                         <iframe class="vnc-iframe" src="{vnc_url}"></iframe>
                     </div>
                 </div>
