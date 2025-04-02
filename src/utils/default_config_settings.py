@@ -25,7 +25,7 @@ def default_config():
         "disable_security": True,
         "enable_recording": True,
         "window_w": 1280,
-        "window_h": 800,
+        "window_h": 720,
         "save_recording_path": "./tmp/record_videos",
         "save_trace_path": "./tmp/traces",
         "save_agent_history_path": "./tmp/agent_history",

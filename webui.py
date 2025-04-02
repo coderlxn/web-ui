@@ -1358,8 +1358,12 @@ def create_ui(config, theme_name="Ocean"):
         async () => {
             function checkTakeoverStatus() {
                 // 通过调用隐藏元素的点击事件来触发后端函数
-                console.log("checkTakeoverStatus called");
-                if(document.getElementById('polling_trigger')) {
+                // console.log("checkTakeoverStatus called");
+                //如果vnc-popup存在并且可见，则跳过检查
+                if(document.getElementById('vnc-popup') && document.getElementById('vnc-popup').style.display !== 'none') {
+                    console.log("vnc-popup exists and is visible, skip checking");
+                }
+                else if(document.getElementById('polling_trigger')) {                    
                     document.getElementById('polling_trigger').click();
                 }
                 setTimeout(checkTakeoverStatus, 1000); // 每秒检查一次
