@@ -1120,7 +1120,7 @@ def create_ui(config, theme_name="Ocean"):
 
                 # 检测新的接管请求（状态为活跃且时间戳更新了）
                 new_request = is_active and last_time > _last_known_takeover_time
-                logger.info(f"check_takeover_requests is_active: {is_active}, new_request: {new_request}")
+                # logger.info(f"check_takeover_requests is_active: {is_active}, new_request: {new_request}")
 
                 if new_request:
                     # 更新已知的最后接管时间
