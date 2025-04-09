@@ -88,6 +88,6 @@ ENV RESOLUTION_HEIGHT=720
 RUN mkdir -p /var/log/supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 7788 6080 5901
+EXPOSE 7788 6080 6081 5901 5902
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
